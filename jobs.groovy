@@ -1,66 +1,61 @@
-job("LAB9-sromanchenko-main-build-job") {
-    description()
-    keepDependencies(false)
-    parameters {
-        choiceParam('BRANCH_NAME', ['sromanchenko', 'master'], 'Branch choice')
-        activeChoiceParam('BUILD_TRIGGER') {
-            choiceType('CHECKBOX')
-            groovyScript {
-                script('''return ["LAB9-sromanchenko-child1-build-job","LAB9-sromanchenko-child1-build-job","LAB9-sromanchenko-child1-build-job","LAB9-sromanchenko-child1-build-job"]''')
-                fallbackScript('"fallback choice"')
-            }
-        }
-        steps {
-            downstreamParameterized {
-                trigger('$BUILD_TRIGGER') {
-                    block {
-                        buildStepFailure('FAILURE')
-                        failure('FAILURE')
-                        unstable('UNSTABLE')
-                    }
-                    parameters {
-                        predefinedProp('BRANCH_NAME', '$BRANCH_NAME')
-                    }
-                }
-            }
-        }
+freeStyleJob('MNTLAB-ypapkou-main-build-job'){
+  parameters {
+    description 'Main job'
+    choiceParam('BRANCH_NAME', ['ypapkou', 'master'], 'Branch name')
+    activeChoiceParam('Jobs_to_execute') {
+      description('Allows user choose jobs to execute')   	  
+      filterable(false)
+      choiceType('CHECKBOX')
+      groovyScript {
+        script('return ["MNTLAB-ypapkou-child1-build-job","MNTLAB-ypapkou-child2-build-job","MNTLAB-ypapkou-child3-build-job","MNTLAB-ypapkou-child4-build-job"]')
+     	fallbackScript('"fallback choice"')
+      }
     }
-    disabled(false)
-    concurrentBuild(false)
-}
-for(i in 1..4) {
-    job("LAB9-sromanchenko-child${i}-build-job") {
-
-        wrappers {
-            preBuildCleanup()
+  }
+  
+  steps {
+    downstreamParameterized {
+      trigger('$Jobs_to_execute') {
+        block {
+          buildStepFailure('FAILURE')
+          failure('FAILURE')
+          unstable('UNSTABLE')
         }
         parameters {
-            gitParam('BRANCH_NAME') {
-                description('Get branch info')
-                type('BRANCH')
-            }
+          predefinedProp('BRANCH_NAME', '$BRANCH_NAME')
         }
-        scm {
-            git {
-                remote {
-                    github("MNT-Lab/d323dsl", "https")
-                }
-                branch('$BRANCH_NAME')
-            }
-        }
-        steps {
-            shell('bash script.sh > output.txt')
-            shell('BRANCH_NAME="$(cut -d\'/\' -f2 <<<"$BRANCH_NAME")"; tar cvf $BRANCH_NAME\\_dsl_script.tar.gz jobs.groovy')
-        }
-        publishers {
-            archiveArtifacts {
-                pattern('output.txt, ${BRANCH_NAME}_dsl_script.tar.gz')
-                allowEmpty(false)
-                onlyIfSuccessful(false)
-                fingerprint(false)
-                defaultExcludes(true)
-            }
-
-        }
+      }
     }
+  }
+}
+
+for (i in 1..4) {
+  freeStyleJob("MNTLAB-ypapkou-child${i}-build-job") {
+    description "Child${i} job"
+    parameters {      
+      activeChoiceParam('BRANCH_NAME') {
+        description('Allows user choose branches')
+        filterable(false)
+        choiceType('SINGLE_SELECT')
+        groovyScript {
+          script('("git ls-remote -h https://github.com/MNT-Lab/d323dsl").execute().text.readLines().collect { it.split()[1].replaceAll(\'refs/heads/\', \'\')}')
+     	  fallbackScript('"fallback choice"')
+        }    
+      }
+    }
+  	scm {
+      git {
+        remote {
+          github('MNT-Lab/d323dsl', 'https')
+        }
+        branch('${BRANCH_NAME}')
+      }
+    }
+    steps {
+      shell('bash script.sh > output.txt; tar -zcvf $BRANCH_NAME\\_dsl_script.tar.gz jobs.groovy')
+    }
+    publishers {
+      archiveArtifacts('output.txt, ${BRANCH_NAME}_dsl_script.tar.gz')
+    }
+  }
 }
