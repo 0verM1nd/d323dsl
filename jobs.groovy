@@ -1,4 +1,4 @@
-freeStyleJob('MNTLAB-ypapkou-main-build-job'){
+freeStyleJob('LAB-sromanchenko-main-build-job'){
   parameters {
     description 'Main job'
     choiceParam('BRANCH_NAME', ['ypapkou', 'master'], 'Branch name')
@@ -7,7 +7,7 @@ freeStyleJob('MNTLAB-ypapkou-main-build-job'){
       filterable(false)
       choiceType('CHECKBOX')
       groovyScript {
-        script('return ["MNTLAB-ypapkou-child1-build-job","MNTLAB-ypapkou-child2-build-job","MNTLAB-ypapkou-child3-build-job","MNTLAB-ypapkou-child4-build-job"]')
+        script('return ["LAB-sromanchenko-child1-build-job","LAB-sromanchenko-child2-build-job","LAB-sromanchenko-child3-build-job","LAB-sromanchenko-child4-build-job"]')
      	fallbackScript('"fallback choice"')
       }
     }
@@ -30,7 +30,7 @@ freeStyleJob('MNTLAB-ypapkou-main-build-job'){
 }
 
 for (i in 1..4) {
-  freeStyleJob("MNTLAB-ypapkou-child${i}-build-job") {
+  freeStyleJob("LAB-sromanchenko-child${i}-build-job") {
     description "Child${i} job"
     parameters {      
       activeChoiceParam('BRANCH_NAME') {
@@ -38,7 +38,7 @@ for (i in 1..4) {
         filterable(false)
         choiceType('SINGLE_SELECT')
         groovyScript {
-          script('("git ls-remote -h https://github.com/MNT-Lab/d323dsl").execute().text.readLines().collect { it.split()[1].replaceAll(\'refs/heads/\', \'\')}')
+          script('("git ls-remote -h https://github.com/0verM1nd/d323dsl").execute().text.readLines().collect { it.split()[1].replaceAll(\'refs/heads/\', \'\')}')
      	  fallbackScript('"fallback choice"')
         }    
       }
@@ -46,7 +46,7 @@ for (i in 1..4) {
   	scm {
       git {
         remote {
-          github('MNT-Lab/d323dsl', 'https')
+          github('0verM1nd/d323dsl', 'https')
         }
         branch('${BRANCH_NAME}')
       }
